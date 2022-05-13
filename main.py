@@ -5,7 +5,7 @@ from itertools import count
     Initial traffic level N;Initial traffic level E;Initial traffic level W;Green traffic light;Final traffic level N;Final traffic level E;Final traffic level W
 """
 class MDP:
-    def __init__(self) -> None:
+    def __init__(self, file) -> None:
         #use states as matrix indices
         self.states = {
             'LowLowLow': 0,
@@ -17,6 +17,7 @@ class MDP:
             'LowLowHigh': 6,
             'LowHighLow': 7
         }
+        self.file = file
         self.goal = self.states['LowLowLow']
         self.N_green = np.zeros((8, 8))
         self.W_green = np.zeros((8, 8))
@@ -26,7 +27,7 @@ class MDP:
             'W': self.W_green,
             'E': self.E_green
         }
-        self.get_transition_probabilities(self.N_green, self.W_green, self.E_green)
+        self.get_transition_probabilities()
     
     #value iteration     
     def value_iteration(self):
@@ -69,9 +70,9 @@ class MDP:
                 
     
     #get_counts reads the lines of the file and gets the counts of initital_states, lights, final_states
-    def get_transition_probabilities(self, N_green, W_green, E_green):        
+    def get_transition_probabilities(self):        
         #actions = {'N': 0, 'W':1, 'E':2}    
-        with open('./Data.csv', 'r') as f:
+        with open(self.file, 'r') as f:
             linereader = csv.reader(f,delimiter=';', quotechar='|')
             for line in linereader:            
                 #get indice values of state
@@ -79,14 +80,13 @@ class MDP:
                 action = line[3]
                 transition_state = self.states[''.join(line[4:])]
                 
-                #transition_counts[initial_state][transition_state] += 1
-                #action[action][initial_state][transition_state] += 1
+
                 if action == 'N':
-                    N_green[initial_state][transition_state] += 1
+                    self.N_green[initial_state][transition_state] += 1
                 elif action == 'W':
-                    W_green[initial_state][transition_state] += 1
+                    self.W_green[initial_state][transition_state] += 1
                 else:
-                    E_green[initial_state][transition_state] += 1
+                    self.E_green[initial_state][transition_state] += 1
             #convert action counts to probabilities -> P(S'|S,a)
             def convert_array_counts_to_prob(arr):
                 for r in range(len(arr)):
@@ -95,15 +95,15 @@ class MDP:
                         for j in range(len(arr[0])):
                             arr[r][j] = arr[r][j]/count
             
-            convert_array_counts_to_prob(N_green)
-            convert_array_counts_to_prob(W_green)
-            convert_array_counts_to_prob(E_green)
+            convert_array_counts_to_prob(self.N_green)
+            convert_array_counts_to_prob(self.W_green)
+            convert_array_counts_to_prob(self.E_green)
 
 
             
 
 
-x = MDP()
-print(x.value_iteration())
+# x = MDP()
+# print(x.value_iteration())
 # print(x.value_iteration(x.W_green))
 # print(x.value_iteration(x.N_green))
