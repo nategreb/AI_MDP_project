@@ -16,10 +16,12 @@ class MDP:
             'LowLowHigh': 6,
             'LowHighLow': 7
         }
+        #convert action A into indice value
         self.actions_index = {'N': 0, 'W': 1, 'E':2}
         self.cost = 1
         #keep track of actions that state has
         self.states_actions = np.zeros((8,3))
+        #data file
         self.file = file
         self.goal = self.states['LowLowLow']
         self.N_green = np.zeros((8, 8))
@@ -83,7 +85,15 @@ class MDP:
         return [new_V, optimal_policies]
                 
     
-    #get_counts reads the lines of the file and gets the counts of initital_states, lights, final_states
+    """
+    get_transition_probabilities parses input data file and gets the probabilites of P(S'|a,S)
+    Ex)
+        Low;High;Low;E;Low;High;High is parsed into        
+        Matrix[E][LowHighLow][LowHighHigh]
+        Where the action,initialState,transitionState is the indice to action matrix
+        which stores P(S'|a,S)
+        
+    """
     def get_transition_probabilities(self):        
         #actions = {'N': 0, 'W':1, 'E':2}    
         with open(self.file, 'r') as f:
@@ -93,31 +103,31 @@ class MDP:
             #next(linereader)
             
             for line in linereader:            
-                #get indice values of state
+                #get matrix indice values of initial state
                 initial_state = self.states[''.join(line[0:3])]
+                #get action  
                 action = line[3]
+                #get matrix indice value of transition state
                 transition_state = self.states[''.join(line[4:])]
                 
+                #get action corresponding matrix indice
+                action_indice=self.actions_index[action]
                 
-                if action == 'N':
-                    self.N_green[initial_state][transition_state] += 1
-                    #set to 1 to indicate state has this action
-                    self.states_actions[initial_state][self.actions_index[action]] = 1
-                elif action == 'W':
-                    self.W_green[initial_state][transition_state] += 1
-                    self.states_actions[initial_state][self.actions_index[action]] = 1
-                else:
-                    self.E_green[initial_state][transition_state] += 1
-                    self.states_actions[initial_state][self.actions_index[action]] = 1
+                #increment count of action occuring in transitino T(S,a,S')
+                self.actions[action][initial_state][transition_state] += 1
+                
+                #set to 1 to indicate state has this action
+                self.states_actions[initial_state][action_indice] = 1
            
-            #convert action counts to probabilities -> P(S'|S,a)
+            #convert transition counts of each state to probabilities -> P(S'|S,a)
             def convert_array_counts_to_prob(arr):
                 for r in range(len(arr)):
+                    #count of each row
                     count = sum(arr[r])
                     if count>0:
                         for j in range(len(arr[0])):
                             arr[r][j] = arr[r][j]/count
-            
+
             convert_array_counts_to_prob(self.N_green)
             convert_array_counts_to_prob(self.W_green)
             convert_array_counts_to_prob(self.E_green)
@@ -128,6 +138,4 @@ class MDP:
 
 x = MDP('Data.csv')
 print(x.value_iteration())
-# print(x.states)
-# print(x.value_iteration(x.W_green))
-# print(x.value_iteration(x.N_green))
+print(x.states)
